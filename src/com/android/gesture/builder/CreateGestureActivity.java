@@ -30,10 +30,14 @@ import android.widget.Toast;
 import java.io.File;
 
 public class CreateGestureActivity extends Activity {
-    private static final float LENGTH_THRESHOLD = 120.0f;
+    private static final float LENGTH_THRESHOLD = 240.0f;
 
     private Gesture mGesture;
-    private View mDoneButton;
+    private View mSaveButton;
+    //private View mDoneButton;
+    private View mRedoButton;
+    private TextView debugTextView;
+    private GestureOverlayView overlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,9 +45,15 @@ public class CreateGestureActivity extends Activity {
         
         setContentView(R.layout.create_gesture);
 
-        mDoneButton = findViewById(R.id.done);
+        debugTextView = (TextView)findViewById(R.id.textview_debug);
+        mSaveButton = findViewById(R.id.save);
+       // mDoneButton = findViewById(R.id.done);
+        mRedoButton = findViewById(R.id.redo);
+        
+       // mDoneButton.setEnabled(false);
 
-        GestureOverlayView overlay = (GestureOverlayView) findViewById(R.id.gestures_overlay);
+        overlay = (GestureOverlayView) findViewById(R.id.gestures_overlay);
+        
         overlay.addOnGestureListener(new GesturesProcessor());
     }
 
@@ -70,7 +80,7 @@ public class CreateGestureActivity extends Activity {
                 }
             });
 
-            mDoneButton.setEnabled(true);
+            mSaveButton.setEnabled(true);
         }
     }
 
@@ -107,13 +117,36 @@ public class CreateGestureActivity extends Activity {
         finish();
     }
     
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void redoGesture(View v) {
+    	setDebugText(0,0.0f);
+    	mGesture = null; 
+    	overlay.clear(false);
+    }
+    
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void doneGesture(View v) {
+    	mGesture = overlay.getGesture();
+        if (mGesture.getLength() < LENGTH_THRESHOLD) {
+            overlay.clear(false);
+        }
+        mSaveButton.setEnabled(true);
+    }
+    
+    private void setDebugText(int strokes, float length) {
+    	debugTextView.setText("| Strokes: " + strokes);
+    	debugTextView.append(" | ");
+    	debugTextView.append("Length: " + length + " |");
+    }
+    
     private class GesturesProcessor implements GestureOverlayView.OnGestureListener {
         public void onGestureStarted(GestureOverlayView overlay, MotionEvent event) {
-            mDoneButton.setEnabled(false);
+            mSaveButton.setEnabled(false);
             mGesture = null;
         }
 
         public void onGesture(GestureOverlayView overlay, MotionEvent event) {
+        	//mDoneButton.setEnabled(true);
         }
 
         public void onGestureEnded(GestureOverlayView overlay, MotionEvent event) {
@@ -121,7 +154,8 @@ public class CreateGestureActivity extends Activity {
             if (mGesture.getLength() < LENGTH_THRESHOLD) {
                 overlay.clear(false);
             }
-            mDoneButton.setEnabled(true);
+            mSaveButton.setEnabled(true);
+            setDebugText(mGesture.getStrokesCount(), mGesture.getLength());
         }
 
         public void onGestureCancelled(GestureOverlayView overlay, MotionEvent event) {
